@@ -256,7 +256,7 @@ spring-cloud-ex/
 │   ├── helm/spring-cloud-demo/    # Helm Chart（多环境 values）
 │   └── k8s/                       # 原生 K8s YAML（备用）
 ├── docs/cicd/                     # 从零搭建 CI/CD 的完整文档
-│   ├── from-zero/                 # 10 章保姆级教程
+│   ├── from-zero/
 │   ├── git-flow.md                # 分支策略
 │   └── jenkins-prerequisites.md   # Jenkins 前置条件
 ├── scripts/                       # 辅助脚本
