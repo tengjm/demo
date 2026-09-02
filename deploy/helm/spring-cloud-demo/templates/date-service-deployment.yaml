@@ -1,0 +1,85 @@
+{{- if .Values.dateService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.dateService.name }}
+  labels:
+    {{- include "spring-cloud-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.dateService.name }}
+spec:
+  replicas: {{ .Values.dateService.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: {{ .Values.dateService.name }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.dateService.port }}"
+        prometheus.io/path: "/actuator/prometheus"
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: {{ .Values.dateService.name }}
+    spec:
+      {{- with .Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.dateService.name }}
+          image: {{ include "spring-cloud-demo.image" (dict "root" . "repository" .Values.dateService.image.repository "tag" .Values.dateService.image.tag) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.dateService.port }}
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: {{ .Values.global.nacosAddr | quote }}
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE
+              value: {{ .Values.global.nacosNamespace | quote }}
+            {{- if .Values.global.nacosAuth.enabled }}
+            - name: SPRING_CLOUD_NACOS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.nacosAuth.secretName | quote }}
+                  key: {{ .Values.global.nacosAuth.usernameKey | quote }}
+            - name: SPRING_CLOUD_NACOS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.nacosAuth.secretName | quote }}
+                  key: {{ .Values.global.nacosAuth.passwordKey | quote }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.dateService.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dateService.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.dateService.probes.startup.failureThreshold }}
+            timeoutSeconds: {{ .Values.dateService.probes.startup.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: {{ .Values.dateService.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dateService.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.dateService.probes.readiness.failureThreshold }}
+            timeoutSeconds: {{ .Values.dateService.probes.readiness.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.dateService.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dateService.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.dateService.probes.liveness.failureThreshold }}
+            timeoutSeconds: {{ .Values.dateService.probes.liveness.timeoutSeconds }}
+          {{- with .Values.dateService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

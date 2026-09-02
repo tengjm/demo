@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: date-service
+  labels:
+    app: date-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: date-service
+  template:
+    metadata:
+      labels:
+        app: date-service
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      containers:
+        - name: date-service
+          image: 10.1.106.200:8088/devops-demo/date-service:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8001
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: "nacos.nacos.svc.cluster.local:8848"
+            - name: SPRING_CLOUD_NACOS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: nacos-auth
+                  key: username
+            - name: SPRING_CLOUD_NACOS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nacos-auth
+                  key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: date-service
+  labels:
+    app: date-service
+spec:
+  type: ClusterIP
+  selector:
+    app: date-service
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001

@@ -1,0 +1,18 @@
+{{- if .Values.dateService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dateService.name }}
+  labels:
+    {{- include "spring-cloud-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.dateService.name }}
+spec:
+  type: {{ .Values.dateService.service.type }}
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: {{ .Values.dateService.name }}
+  ports:
+    - name: http
+      port: {{ .Values.dateService.service.port }}
+      targetPort: {{ .Values.dateService.port }}
+{{- end }}

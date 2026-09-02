@@ -1,0 +1,21 @@
+{{- if .Values.helloService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.helloService.name }}
+  labels:
+    {{- include "spring-cloud-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.helloService.name }}
+spec:
+  type: {{ .Values.helloService.service.type }}
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: {{ .Values.helloService.name }}
+  ports:
+    - name: http
+      port: {{ .Values.helloService.service.port }}
+      targetPort: {{ .Values.helloService.port }}
+      {{- if eq .Values.helloService.service.type "NodePort" }}
+      nodePort: {{ .Values.helloService.service.nodePort }}
+      {{- end }}
+{{- end }}

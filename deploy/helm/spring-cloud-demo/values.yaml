@@ -1,0 +1,74 @@
+global:
+  imageRegistry: 172.24.76.66:8088
+  imageProject: devops-demo
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: my-registry-key
+  nacosAddr: nacos.nacos.svc.cluster.local:8848
+  nacosNamespace: public
+  nacosAuth:
+    enabled: false
+    secretName: nacos-auth
+    usernameKey: username
+    passwordKey: password
+  nodeSelector:
+    harbor-insecure: "true"
+
+dateService:
+  enabled: true
+  name: date-service
+  replicas: 1
+  image:
+    repository: date-service
+    tag: latest
+  port: 8001
+  service:
+    type: ClusterIP
+    port: 8001
+  probes:
+    startup:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 18
+      timeoutSeconds: 5
+    readiness:
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+    liveness:
+      initialDelaySeconds: 0
+      periodSeconds: 20
+      failureThreshold: 3
+      timeoutSeconds: 5
+  resources: {}
+
+helloService:
+  enabled: true
+  name: hello-service
+  replicas: 1
+  image:
+    repository: hello-service
+    tag: latest
+  port: 8002
+  service:
+    type: NodePort
+    port: 8002
+    nodePort: 30082
+  probes:
+    startup:
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      failureThreshold: 18
+      timeoutSeconds: 5
+    readiness:
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+    liveness:
+      initialDelaySeconds: 0
+      periodSeconds: 20
+      failureThreshold: 3
+      timeoutSeconds: 5
+  resources: {}

@@ -1,0 +1,85 @@
+{{- if .Values.helloService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.helloService.name }}
+  labels:
+    {{- include "spring-cloud-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.helloService.name }}
+spec:
+  replicas: {{ .Values.helloService.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: {{ .Values.helloService.name }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.helloService.port }}"
+        prometheus.io/path: "/actuator/prometheus"
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: {{ .Values.helloService.name }}
+    spec:
+      {{- with .Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.helloService.name }}
+          image: {{ include "spring-cloud-demo.image" (dict "root" . "repository" .Values.helloService.image.repository "tag" .Values.helloService.image.tag) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.helloService.port }}
+          env:
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+              value: {{ .Values.global.nacosAddr | quote }}
+            - name: SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE
+              value: {{ .Values.global.nacosNamespace | quote }}
+            {{- if .Values.global.nacosAuth.enabled }}
+            - name: SPRING_CLOUD_NACOS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.nacosAuth.secretName | quote }}
+                  key: {{ .Values.global.nacosAuth.usernameKey | quote }}
+            - name: SPRING_CLOUD_NACOS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.nacosAuth.secretName | quote }}
+                  key: {{ .Values.global.nacosAuth.passwordKey | quote }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.helloService.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.helloService.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.helloService.probes.startup.failureThreshold }}
+            timeoutSeconds: {{ .Values.helloService.probes.startup.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: {{ .Values.helloService.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.helloService.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.helloService.probes.readiness.failureThreshold }}
+            timeoutSeconds: {{ .Values.helloService.probes.readiness.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.helloService.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.helloService.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.helloService.probes.liveness.failureThreshold }}
+            timeoutSeconds: {{ .Values.helloService.probes.liveness.timeoutSeconds }}
+          {{- with .Values.helloService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

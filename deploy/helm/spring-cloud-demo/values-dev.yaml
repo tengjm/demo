@@ -1,0 +1,12 @@
+dateService:
+  replicas: 1
+  image:
+    tag: dev
+
+helloService:
+  replicas: 1
+  image:
+    tag: dev
+  service:
+    type: NodePort
+    nodePort: 30083

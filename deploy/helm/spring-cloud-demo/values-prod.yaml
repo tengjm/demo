@@ -1,0 +1,26 @@
+dateService:
+  replicas: 1
+  image:
+    tag: prod
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+helloService:
+  replicas: 1
+  image:
+    tag: prod
+  service:
+    type: NodePort
+    nodePort: 30082
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
